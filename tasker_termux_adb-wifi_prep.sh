@@ -17,9 +17,11 @@ prepare_Tasker(){
     echo "Downloading adb.sh"
     curl -L https://raw.githubusercontent.com/Thyrador/useful-stuff-public/main/adb/adb.sh > $TASKERDIR/adb.sh
     
+    echo
     echo "Downloading adb_pair.sh"
     curl -L https://raw.githubusercontent.com/Thyrador/useful-stuff-public/main/adb/adb_pair.sh > $TASKERDIR/adb_pair.sh
     
+    echo
     echo "Downloading adb_connect.sh"
     curl -L https://raw.githubusercontent.com/Thyrador/useful-stuff-public/main/adb/adb_connect.sh > $TASKERDIR/adb_connect.sh
     
