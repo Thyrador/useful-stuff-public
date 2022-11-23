@@ -1,7 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/bash
 
 adb=$PREFIX/bin/adb
-PORTS=$(rustscan -a 127.0.0.1 -t 5000 -b 2000 --range 30000-50000 -g | cut -d "[" -f2 | cut -d "]" -f1)
+PORTS=$(rustscan -a 127.0.0.1 -t 5000 -b 1000 --range 30000-50000 -g | cut -d "[" -f2 | cut -d "]" -f1)
 
 #echo "ports scanned: $PORTS"
 for port in $(echo $PORTS | sed "s/,/ /g")
