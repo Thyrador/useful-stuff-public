@@ -1,0 +1,119 @@
+#!/bin/bash
+
+target=~/.local/bin/chiaki
+cd /tmp
+
+which yum >& /dev/null && { installer=dnf; }
+which dnf >& /dev/null && { installer=dnf; }
+which apt-get >& /dev/null && { installer=apt-get; }
+
+CheckPackages(){
+    FED_packageList="git cmake make qt5-qtmultimedia-devel qt5-qtsvg-devel qt5-qtbase-gui ffmpeg-devel opus-devel openssl-devel python3-protobuf protobuf-c protobuf-devel qt5-rpm-macros SDL2-devel libevdev-devel systemd-devel"
+    DEB_packageList="git cmake python3-pip qt5-default qtmultimedia5-dev libqt5svg5-dev pyqt5-dev ffmpeg x264 libavcodec-dev libopus-dev openssl protobuf-compiler libssl-dev libsdl2-dev"
+    pip3packageList="protobuf google"
+
+    if [ $installer == dnf ]; then
+        for packageName in $FED_packageList; do
+            rpm --quiet --query $packageName || installList+="$packageName "
+        done
+    else
+        for packageName in $DEB_packageList; do
+            dpkg -l $packageName &>/dev/null || installList+="$packageName "
+        done
+    fi
+
+
+    for pip3packageName in $pip3packageList; do
+        isInstalled=$(pip3 list --disable-pip-version-check | grep -E "$pip3packageName")
+        [ -z "$isInstalled" ] && pip3installList+="$pip3packageName "
+    done
+
+    [ ! -z "$installList" ] || [ ! -z "$pip3installList" ] && echo "Installing neccessary packagaes"
+    [ -z "$installList" ] || sudo $installer update && sudo $installer install -y $installList
+    [ -z "$pip3installList" ] || pip3 install $pip3packageList
+}
+
+Prepare(){
+    CheckPackages
+    echo
+    echo -n "Preparing environment   "
+    [ -f $target ] && rm -f $target
+    echo -n "."
+    [ -d Chiaki ] && rm -rf Chiaki
+    echo -n "."
+    [ ! -d ~/.config/Chiaki ] && mkdir -p ~/.config/Chiaki
+    echo -n "."
+
+    mkdir -p Chiaki
+    cd Chiaki
+    echo -n "."
+
+    echo " done!"
+    echo
+    Build
+}
+
+Build(){
+    echo "Build and install latest Chiaki release"
+    echo
+
+    git clone https://git.sr.ht/~thestr4ng3r/chiaki
+    cd chiaki
+
+    git submodule update --init
+    mkdir build && cd build
+    cmake ../ -DCMAKE_INSTALL_PREFIX=/tmp/Chiaki/Chiaki_Bin
+    make
+    make install
+
+    PostBuild
+}
+
+PostBuild(){
+    echo
+    echo -n "Update environment and copy files   "
+    cd /tmp/Chiaki/Chiaki_Bin/
+    echo -n "."
+    yes | cp -rf bin ~/.local
+    yes | cp -rf share ~/.local
+    echo -n "."
+    echo " done!"
+    echo
+
+    CleanUp
+}
+
+CleanUp(){
+    echo -n "Cleaning up   "
+    rm -rf /tmp/Chiaki
+    echo "... done!"
+    echo
+    echo "Installation finished"
+    echo
+    exit 0
+}
+
+Usage() {
+    echo "Usage: $(basename $0) [-u]"
+    echo "    -u: Installs or updates your Chiaki installation."
+}
+
+if [ -z "$1" ]; then
+    echo
+    echo "No arguments supplied."
+    Usage
+    echo
+    Prepare
+    exit 1
+fi
+
+while getopts ':uh' opt
+do
+    case "$opt" in
+        u) Prepare ;;
+        ?|h) Usage ;;
+        '?')
+            Usage 
+            die ;;
+    esac
+done

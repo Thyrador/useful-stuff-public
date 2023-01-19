@@ -1,0 +1,52 @@
+#!/bin/bash
+
+echo "Downloading neccessary files..."
+
+cd /tmp
+TELEGRAM_LINK=$(curl -s https://api.github.com/repos/telegramdesktop/tdesktop/releases/latest | grep browser_download_url | cut -d\" -f4 | egrep 'tsetup.[0-9.]+.tar.xz$')
+VERSION=$(echo $TELEGRAM_LINK | grep -Po '(?<=releases/download/v)[^/]+')
+
+curl -o tsetup.tar.xz -OL $TELEGRAM_LINK
+curl -o icon.png -OL https://raw.githubusercontent.com/telegramdesktop/tdesktop/master/Telegram/Telegram/Images.xcassets/Icon.iconset/icon_256x256@2x.png
+
+echo "Creating destination folder..."
+
+sudo mkdir -p /usr/share/telegram
+sudo chmod +x /usr/share/telegram
+
+echo "Extracting files..."
+
+tar -xJf tsetup.tar.xz
+cd ./Telegram
+
+echo "Copying new files..."
+sudo cp ./Updater /usr/share/telegram/Updater
+sudo cp ./Telegram /usr/share/telegram/Telegram
+
+
+echo "Making desktop files..."
+
+cd /tmp
+
+sudo echo "[Desktop Entry]" > telegram.desktop
+sudo echo "Name=Telegram Desktop" >> telegram.desktop
+sudo echo "Comment=Official desktop version of Telegram messaging app" >> telegram.desktop
+sudo echo "Exec=/usr/share/telegram/Updater" >> telegram.desktop
+sudo echo "Terminal=false" >> telegram.desktop
+sudo echo "Type=Application" >> telegram.desktop
+sudo echo "Icon=/usr/share/telegram/icon.png" >> telegram.desktop
+sudo echo "Categories=Network;Chat;" >> telegram.desktop
+sudo echo "StartupNotify=false" >> telegram.desktop
+
+sudo cp icon.png /usr/share/telegram/icon.png
+sudo cp telegram.desktop /usr/share/applications/telegram.desktop
+
+echo "Removing old files..."
+
+rm /tmp/tsetup.tar.xz
+rm /tmp/icon.png
+rm /tmp/telegram.desktop
+rm -R /tmp/Telegram
+
+echo "Installation Complete!"
+exit 0
