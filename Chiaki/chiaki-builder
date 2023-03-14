@@ -28,9 +28,11 @@ CheckPackages(){
         [ -z "$isInstalled" ] && pip3installList+="$pip3packageName "
     done
 
-    [ ! -z "$installList" ] || [ ! -z "$pip3installList" ] && echo "Installing neccessary packagaes"
-    [ -z "$installList" ] || sudo $installer update && sudo $installer install -y $installList
-    [ -z "$pip3installList" ] || pip3 install $pip3packageList
+    if [ ! -z "$installList" ] || [ ! -z "$pip3installList" ]; then
+        echo "Installing neccessary packagaes"
+        if [ ! -z "$installList" ]; then sudo $installer update && sudo $installer install -y $installList; fi
+        if [ ! -z "$pip3installList" ]; then pip3 install $pip3packageList; fi
+    fi
 }
 
 Prepare(){
@@ -113,7 +115,7 @@ do
         u) Prepare ;;
         ?|h) Usage ;;
         '?')
-            Usage 
+            Usage
             die ;;
     esac
 done
