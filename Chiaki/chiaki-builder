@@ -3,35 +3,46 @@
 target=~/.local/bin/chiaki
 cd /tmp
 
+inst='install -y'
+upd=update
+pip=pip3
+pip_options='--disable-pip-version-check'
 which yum >& /dev/null && { installer=dnf; }
 which dnf >& /dev/null && { installer=dnf; }
+which pacman >& /dev/null && { installer=pacman; inst='-S --noconfirm'; upd=-Fy; pip=pipx; pip_options=''; }
+which paru >& /dev/null && { installer=paru; inst='-S --noconfirm'; upd=-Fy; pip=pipx; pip_options=''; }
 which apt-get >& /dev/null && { installer=apt-get; }
 
 CheckPackages(){
     FED_packageList="git cmake make qt5-qtmultimedia-devel qt5-qtsvg-devel qt5-qtbase-gui ffmpeg-devel opus-devel openssl-devel python3-protobuf protobuf-c protobuf-devel qt5-rpm-macros SDL2-devel libevdev-devel systemd-devel"
     DEB_packageList="git cmake python3-pip qt5-default qtmultimedia5-dev libqt5svg5-dev pyqt5-dev ffmpeg x264 libavcodec-dev libopus-dev openssl protobuf-compiler libssl-dev libsdl2-dev"
+    ARCH_packageList="ffmpeg gcc-libs qt5-multimedia qt5-svg opus openssl sdl2 cmake make python-protobuf"
     pip3packageList="protobuf google"
 
     if [ $installer == dnf ]; then
         for packageName in $FED_packageList; do
             rpm --quiet --query $packageName || installList+="$packageName "
         done
+    elif [ $installer == paru ] || [ $installer == pacman ]; then
+        for packageName in $ARCH_packageList; do
+            $installer -Q $packageName &>/dev/null || installList+="$packageName "
+        done
+        pip3packageList="google"
     else
         for packageName in $DEB_packageList; do
             dpkg -l $packageName &>/dev/null || installList+="$packageName "
         done
     fi
 
-
     for pip3packageName in $pip3packageList; do
-        isInstalled=$(pip3 list --disable-pip-version-check | grep -E "$pip3packageName")
+        isInstalled=$($pip list $pip_options | grep -E "$pip3packageName")
         [ -z "$isInstalled" ] && pip3installList+="$pip3packageName "
     done
 
     if [ ! -z "$installList" ] || [ ! -z "$pip3installList" ]; then
         echo "Installing neccessary packagaes"
-        if [ ! -z "$installList" ]; then sudo $installer update && sudo $installer install -y $installList; fi
-        if [ ! -z "$pip3installList" ]; then pip3 install $pip3packageList; fi
+        if [ ! -z "$installList" ]; then sudo $installer $upd && sudo $installer $inst $installList; fi
+        if [ ! -z "$pip3installList" ]; then $pip $inst $pip3packageList; fi
     fi
 }
 
